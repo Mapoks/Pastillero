@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mis Medicinas">
+  <title>Pastillero Inteligente - Control de Medicamentos</title>
+  
+  <style>
+    /* CSS Puro sin dependencias externas para garantizar compatibilidad total en iPhone */
+    :root {
+      --primary: #059669;
+      --primary-dark: #047857;
+      --primary-light: #ecfdf5;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --rose: #ef4444;
+      --rose-light: #fef2f2;
+      --amber: #f59e0b;
+      --amber-light: #fffbeb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 90px;
+    }
+
+    /* Header */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+    .header-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .icon-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+    }
+    .btn-header {
+      background: #fff;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Main Container */
+    main {
+      max-width: 480px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Card Box */
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    /* Audio alert card */
+    .banner-audio {
+      background: var(--amber-light);
+      border: 1px solid #fde68a;
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .banner-audio button {
+      background: var(--amber);
+      color: white;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Next dose */
+    .next-dose-tag {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .countdown-timer {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* Items */
+    .dose-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .dose-item.taken {
+      background: #f8fafc;
+      opacity: 0.75;
+    }
+    .dose-item.overdue {
+      background: var(--rose-light);
+      border-color: #fecaca;
+    }
+
+    .btn-take {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-taken {
+      background: #e2e8f0;
+      color: var(--primary-dark);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* Floating bottom navigation */
+    nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+    .btn-floating-add {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      margin-top: -24px;
+      cursor: pointer;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      z-index: 60;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.2s ease;
+    }
+    .modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    .modal-content {
+      background: #fff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 24px 24px 0 0;
+      padding: 20px;
+      max-height: 88vh;
+      overflow-y: auto;
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-size: 14px;
+      color: var(--text-main);
+      outline: none;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      background: #fff;
+    }
+    .btn-group-ampm {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .btn-group-ampm button {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      background: #f8fafc;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-group-ampm button.active {
+      background: var(--primary);
+      color: #fff;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    /* Ocultar insignia y marcas de agua de Netlify de forma agresiva */
+    #netlify-badge,
+    [data-netlify-badge],
+    div[class*="netlify"],
+    iframe[src*="netlify"],
+    iframe[id*="netlify"],
+    a[href*="netlify.com"],
+    div[style*="z-index: 2147483647"],
+    div[style*="z-index: 10000"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      height: 0 !important;
+      width: 0 !important;
+      position: absolute !important;
+      bottom: -9999px !important;
+      left: -9999px !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== HEADER ==================== -->
+  <header>
+    <div class="header-inner">
+      <div class="header-title">
+        <div class="icon-badge">💊</div>
+        <div>
+          <h1 style="font-size: 17px; font-weight: 800;">Pastillero</h1>
+          <p id="currentDateHeader" style="font-size: 12px; color: var(--text-muted);">Hoy</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button id="audioInitBtn" onclick="toggleAudioSystem()" class="btn-header">
+          <span id="audioIcon">🔔</span> <span id="audioText">Alarmas Activas</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== CONTENIDO ==================== -->
+  <main>
+    <!-- Banner de Activación de Alarma -->
+    <div id="audioWarningBanner" class="banner-audio">
+      <div style="font-size: 12px; line-height: 1.3;">
+        <strong>🔔 Activa las alarmas:</strong> Toca para permitir el sonido de recordatorio en tu iPhone.
+      </div>
+      <button onclick="toggleAudioSystem()">Habilitar</button>
+    </div>
+
+    <!-- TARJETA: PRÓXIMA TOMA -->
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span class="next-dose-tag">Próxima toma</span>
+        <span id="nextDoseCountdown" class="countdown-timer">--:--:--</span>
+      </div>
+      <div id="nextDoseContent">
+        <p style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 10px 0;">
+          Calculando tomas...
+        </p>
+      </div>
+    </section>
+
+    <!-- RESUMEN DEL DÍA -->
+    <section class="card" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <p style="font-size: 12px; color: var(--text-muted);">Progreso de hoy</p>
+        <h3 id="progressStatsText" style="font-size: 17px; font-weight: 800;">0 de 0 tomas</h3>
+      </div>
+      <div style="font-size: 15px; font-weight: 800; color: var(--primary);" id="progressPercentage">
+        0%
+      </div>
+    </section>
+
+    <!-- AGENDA DE HOY -->
+    <section>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 4px 12px;">
+        <h2 style="font-size: 16px; font-weight: 800;">Horarios de Hoy</h2>
+        <span id="clockLive" style="font-size: 12px; font-family: monospace; background: #e2e8f0; padding: 4px 8px; border-radius: 8px; font-weight: bold;">00:00:00</span>
+      </div>
+      <div id="dailyScheduleList">
+        <!-- Tomas inyectadas dinámicamente -->
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== BOTONES DE NAVEGACIÓN ==================== -->
+  <nav>
+    <button onclick="renderTodaySchedule()" style="background:none; border:none; color: var(--primary); font-weight: bold; font-size: 13px; cursor: pointer;">
+      📅 Hoy
+    </button>
+    <button onclick="openNewMedModal()" class="btn-floating-add" title="Nuevo Tratamiento">
+      +
+    </button>
+    <button onclick="openModal('medicinesModal')" style="background:none; border:none; color: var(--text-muted); font-weight: bold; font-size: 13px; cursor: pointer;">
+      💊 Tratamientos
+    </button>
+  </nav>
+
+  <!-- ==================== MODAL ALARMA SONORA ==================== -->
+  <div id="alarmModal" class="modal">
+    <div class="modal-content" style="text-align: center; border-radius: 24px; margin-bottom: 20px;">
+      <div style="font-size: 50px; margin-bottom: 10px;">⏰</div>
+      <span style="background: var(--rose-light); color: var(--rose); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">¡HORA DEL MEDICAMENTO!</span>
+      <h2 id="alarmMedName" style="font-size: 22px; font-weight: 900; margin: 10px 0 4px;">Acetaminofén</h2>
+      <p id="alarmMedDose" style="color: var(--primary); font-weight: 700; font-size: 16px;"></p>
+      
+      <div id="alarmMedNotesContainer" style="background: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 12px; margin: 12px 0; font-size: 13px; color: var(--text-muted);">
+        <p id="alarmMedNotes"></p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+        <button onclick="handleAlarmAction('take')" style="background: var(--primary); color: white; border: none; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer;">
+          ✓ Marcar como Tomada
+        </button>
+        <button onclick="handleAlarmAction('snooze')" style="background: #e2e8f0; color: var(--text-main); border: none; padding: 12px; border-radius: 14px; font-size: 14px; font-weight: 600; cursor: pointer;">
+          Posponer 5 minutos
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL FORMULARIO ==================== -->
+  <div id="medFormModal" class="modal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 id="formModalTitle" style="font-size: 18px; font-weight: 800;">Nuevo Tratamiento</h3>
+        <button onclick="closeModal('medFormModal')" style="background:none; border:none; font-size: 22px; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <form id="medicationForm" onsubmit="saveMedication(event)">
+        <input type="hidden" id="medId">
+
+        <div class="form-group">
+          <label class="form-label">Nombre del medicamento *</label>
+          <input type="text" id="medName" required placeholder="Ej. Acetaminofén, Amoxicilina" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Dosis / Cantidad de pastillas *</label>
+          <input type="text" id="medDose" required placeholder="Ej. 1 pastilla de 500mg" class="form-control">
+        </div>
+
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">Frecuencia *</label>
+            <select id="medInterval" onchange="previewSchedulePlan()" class="form-control" style="font-weight: 600;">
+              <option value="4">Cada 4 horas</option>
+              <option value="6" selected>Cada 6 horas</option>
+              <option value="8">Cada 8 horas</option>
+              <option value="12">Cada 12 horas</option>
+              <option value="24">Cada 24 horas</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Duración (Días) *</label>
+            <input type="number" id="medDurationDays" min="1" max="90" value="5" oninput="previewSchedulePlan()" required class="form-control">
+          </div>
+        </div>
+
+        <!-- Fecha y Hora de Inicio -->
+        <div style="background: #f1f5f9; padding: 12px; border-radius: 14px; margin-bottom: 14px;">
+          <label class="form-label" style="color: var(--text-main);">¿A qué hora y fecha comienza la 1ra toma?</label>
+          <div style="margin-bottom: 8px;">
+            <input type="date" id="medStartDate" onchange="previewSchedulePlan()" required class="form-control">
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <select id="startHour" onchange="previewSchedulePlan()" class="form-control" style="width: 70px; font-weight: bold;"></select>
+            <span style="font-weight: bold;">:</span>
+            <select id="startMinute" onchange="previewSchedulePlan()" class="form-control" style="width: 70px; font-weight: bold;"></select>
+            
+            <div class="btn-group-ampm" style="margin-left: auto;">
+              <button type="button" onclick="setStartAmPm('AM')" id="startAmBtn" class="active">AM</button>
+              <button type="button" onclick="setStartAmPm('PM')" id="startPmBtn">PM</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen calculado -->
+        <div id="schedulePreviewBox" style="font-size: 12px; color: var(--text-muted); background: #fff; border: 1px dashed var(--border); padding: 10px; border-radius: 12px; margin-bottom: 14px;">
+          Calculando plan...
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Indicaciones / Notas</label>
+          <input type="text" id="medNotes" placeholder="Ej. Tomar con abundante agua después del almuerzo" class="form-control">
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 16px;">
+          <button type="button" onclick="closeModal('medFormModal')" style="flex: 1; padding: 12px; border: 1px solid var(--border); background: #f8fafc; border-radius: 12px; font-weight: 600; cursor: pointer;">Cancelar</button>
+          <button type="submit" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL LISTA DE MEDICAMENTOS ==================== -->
+  <div id="medicinesModal" class="modal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Tratamientos Activos</h3>
+        <button onclick="closeModal('medicinesModal')" style="background:none; border:none; font-size: 22px; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <div id="medsCatalogList" style="margin-bottom: 14px;"></div>
+
+      <button onclick="openNewMedModal()" style="width: 100%; padding: 12px; background: var(--primary-light); color: var(--primary-dark); border: 1px solid #a7f3d0; border-radius: 12px; font-weight: 700; cursor: pointer;">
+        + Agregar Nuevo Tratamiento
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== LÓGICA JAVASCRIPT ==================== -->
+  <script>
+    const STORAGE_KEY_MEDS = 'medtracker_medications_v3';
+    const STORAGE_KEY_LOGS = 'medtracker_logs_v3';
+    const STORAGE_KEY_SETTINGS = 'medtracker_settings_v3';
+
+    let medications = [];
+    let intakeLogs = {};
+    let isAudioEnabled = true; // Control de alarmas activadas/silenciadas
+    let audioContext = null;
+    let alarmInterval = null;
+    let isAlarmSoundPlaying = false;
+    let activeAlarmDose = null;
+    let startAmPmValue = 'AM';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      populateTimeDropdowns();
+      updateDateHeaders();
+      updateAudioButtonUI();
+      
+      // Iniciar limpio: no se crean medicamentos de prueba
+      renderTodaySchedule();
+      renderMedsCatalog();
+      
+      setInterval(tick, 1000);
+      tick();
+
+      // Destructor de banners inyectados por Netlify u otros hosts
+      const purgeNetlifyBadges = () => {
+        const selectors = [
+          '#netlify-badge',
+          '[data-netlify-badge]',
+          'div[class*="netlify"]',
+          'iframe[src*="netlify"]',
+          'iframe[id*="netlify"]',
+          'a[href*="netlify.com"]'
+        ];
+        selectors.forEach(sel => {
+          document.querySelectorAll(sel).forEach(el => el.remove());
+        });
+        // Remueve cualquier div flotante en la esquina inferior derecha añadido externamente
+        document.querySelectorAll('body > div, body > iframe').forEach(el => {
+          if (el.id !== 'alarmModal' && el.id !== 'medFormModal' && el.id !== 'medicinesModal') {
+            const style = window.getComputedStyle(el);
+            if (style.position === 'fixed' && (style.bottom === '0px' || parseInt(style.bottom) < 60)) {
+              el.remove();
+            }
+          }
+        });
+      };
+
+      purgeNetlifyBadges();
+      setInterval(purgeNetlifyBadges, 800);
+
+      const observer = new MutationObserver(purgeNetlifyBadges);
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+
+    function populateTimeDropdowns() {
+      const hSelect = document.getElementById('startHour');
+      const mSelect = document.getElementById('startMinute');
+      hSelect.innerHTML = '';
+      for (let h = 1; h <= 12; h++) {
+        const val = String(h).padStart(2, '0');
+        hSelect.innerHTML += `<option value="${val}">${val}</option>`;
+      }
+      mSelect.innerHTML = '';
+      ['00', '15', '30', '45'].forEach(m => {
+        mSelect.innerHTML += `<option value="${m}">${m}</option>`;
+      });
+    }
+
+    function formatTime12hFromDate(date) {
+      let hours = date.getHours();
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+    }
+
+    function formatDateYYYYMMDD(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function setStartAmPm(val) {
+      startAmPmValue = val;
+      document.getElementById('startAmBtn').className = val === 'AM' ? 'active' : '';
+      document.getElementById('startPmBtn').className = val === 'PM' ? 'active' : '';
+      previewSchedulePlan();
+    }
+
+    function getStartDateTimeFromInputs() {
+      const dateStr = document.getElementById('medStartDate').value;
+      if (!dateStr) return null;
+      let h = parseInt(document.getElementById('startHour').value, 10);
+      const m = parseInt(document.getElementById('startMinute').value, 10);
+
+      if (startAmPmValue === 'PM' && h < 12) h += 12;
+      if (startAmPmValue === 'AM' && h === 12) h = 0;
+
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day, h, m, 0);
+    }
+
+    function previewSchedulePlan() {
+      const interval = parseInt(document.getElementById('medInterval').value, 10);
+      const days = parseInt(document.getElementById('medDurationDays').value, 10) || 1;
+      const startDateTime = getStartDateTimeFromInputs();
+      const previewBox = document.getElementById('schedulePreviewBox');
+
+      if (!startDateTime || isNaN(startDateTime.getTime())) {
+        previewBox.innerHTML = 'Selecciona fecha y hora de inicio.';
+        return;
+      }
+
+      const totalDoses = Math.floor((days * 24) / interval);
+      const endDateTime = new Date(startDateTime.getTime() + (totalDoses - 1) * interval * 3600 * 1000);
+
+      let sampleHours = [];
+      for (let i = 0; i < Math.min(totalDoses, 24 / interval); i++) {
+        const d = new Date(startDateTime.getTime() + i * interval * 3600 * 1000);
+        sampleHours.push(formatTime12hFromDate(d));
+      }
+
+      previewBox.innerHTML = `
+        <strong>Plan generado:</strong><br>
+        • Total: <b>${totalDoses} tomas</b> (${days} días)<br>
+        • Horarios de cada día: <b style="color:var(--primary);">${sampleHours.join(', ')}</b><br>
+        • Finaliza: ${endDateTime.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })} a las ${formatTime12hFromDate(endDateTime)}
+      `;
+    }
+
+    function generateDosesForMed(med) {
+      const [year, month, day] = med.startDate.split('-').map(Number);
+      const [hours, minutes] = med.startTime.split(':').map(Number);
+      const start = new Date(year, month - 1, day, hours, minutes, 0);
+      const totalDoses = Math.floor((med.durationDays * 24) / med.intervalHours);
+      const doses = [];
+
+      for (let i = 0; i < totalDoses; i++) {
+        const doseDate = new Date(start.getTime() + i * med.intervalHours * 3600 * 1000);
+        const doseKey = `${med.id}_${doseDate.getTime()}`;
+        doses.push({
+          medId: med.id,
+          name: med.name,
+          dose: med.dose,
+          notes: med.notes,
+          intervalHours: med.intervalHours,
+          durationDays: med.durationDays,
+          doseDate,
+          doseKey,
+          doseNumber: i + 1,
+          totalDoses
+        });
+      }
+      return doses;
+    }
+
+    function getAllTodayDoses() {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+      let todayDoses = [];
+      medications.forEach(med => {
+        const allMedDoses = generateDosesForMed(med);
+        const forToday = allMedDoses.filter(d => d.doseDate >= todayStart && d.doseDate <= todayEnd);
+        todayDoses = todayDoses.concat(forToday);
+      });
+
+      todayDoses.forEach(d => {
+        const log = intakeLogs[d.doseKey];
+        if (log && log.taken) {
+          d.status = 'taken';
+        } else if (now > d.doseDate) {
+          d.status = 'overdue';
+        } else {
+          d.status = 'pending';
+        }
+      });
+
+      todayDoses.sort((a, b) => a.doseDate - b.doseDate);
+      return todayDoses;
+    }
+
+    function loadData() {
+      try {
+        const meds = localStorage.getItem(STORAGE_KEY_MEDS);
+        const logs = localStorage.getItem(STORAGE_KEY_LOGS);
+        const settings = localStorage.getItem(STORAGE_KEY_SETTINGS);
+        if (meds) medications = JSON.parse(meds);
+        if (logs) intakeLogs = JSON.parse(logs);
+        if (settings) {
+          const parsedSettings = JSON.parse(settings);
+          if (typeof parsedSettings.isAudioEnabled === 'boolean') {
+            isAudioEnabled = parsedSettings.isAudioEnabled;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY_MEDS, JSON.stringify(medications));
+        localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(intakeLogs));
+        localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ isAudioEnabled }));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    /* Audio */
+    function initAudioContext() {
+      if (!audioContext) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioClass();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+    }
+
+    function updateAudioButtonUI() {
+      const icon = document.getElementById('audioIcon');
+      const text = document.getElementById('audioText');
+      const btn = document.getElementById('audioInitBtn');
+      const banner = document.getElementById('audioWarningBanner');
+
+      if (isAudioEnabled) {
+        icon.innerText = '🔔';
+        text.innerText = 'Alarmas Activas';
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary-dark)';
+        if (banner) banner.classList.add('hidden');
+      } else {
+        icon.innerText = '🔕';
+        text.innerText = 'Alarmas Silenciadas';
+        btn.style.borderColor = 'var(--border)';
+        btn.style.color = 'var(--text-muted)';
+        if (banner) banner.classList.add('hidden');
+      }
+    }
+
+    function toggleAudioSystem() {
+      initAudioContext();
+      // Alternar estado on / off
+      isAudioEnabled = !isAudioEnabled;
+      saveData();
+      updateAudioButtonUI();
+
+      if (isAudioEnabled) {
+        playTone(600, 0.15);
+      } else {
+        stopAlarmLoop();
+      }
+    }
+
+    function playTone(freq, duration = 0.3) {
+      if (!isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + duration);
+      } catch(e){}
+    }
+
+    function startAlarmLoop() {
+      if (!isAudioEnabled) return;
+      if (isAlarmSoundPlaying) return;
+      isAlarmSoundPlaying = true;
+      initAudioContext();
+      const melody = () => {
+        if (!isAlarmSoundPlaying || !isAudioEnabled) return;
+        playTone(523.25, 0.2);
+        setTimeout(() => isAlarmSoundPlaying && isAudioEnabled && playTone(659.25, 0.2), 180);
+        setTimeout(() => isAlarmSoundPlaying && isAudioEnabled && playTone(783.99, 0.35), 360);
+      };
+      melody();
+      alarmInterval = setInterval(melody, 1600);
+    }
+
+    function stopAlarmLoop() {
+      isAlarmSoundPlaying = false;
+      if (alarmInterval) {
+        clearInterval(alarmInterval);
+        alarmInterval = null;
+      }
+    }
+
+    /* Tick & Alarma */
+    let lastCheckedMinute = "";
+    function tick() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clockLive').innerText = `${hours}:${minutes}:${seconds}`;
+
+      const currentMinuteStamp = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}_${hours}:${minutes}`;
+      if (lastCheckedMinute !== currentMinuteStamp) {
+        lastCheckedMinute = currentMinuteStamp;
+        checkDoseAlarms(now);
+        renderTodaySchedule();
+      }
+
+      updateNextDoseCountdown();
+    }
+
+    function checkDoseAlarms(now) {
+      const todayDoses = getAllTodayDoses();
+      todayDoses.forEach(dose => {
+        const isSame = dose.doseDate.getFullYear() === now.getFullYear() &&
+                       dose.doseDate.getMonth() === now.getMonth() &&
+                       dose.doseDate.getDate() === now.getDate() &&
+                       dose.doseDate.getHours() === now.getHours() &&
+                       dose.doseDate.getMinutes() === now.getMinutes();
+        if (isSame && !intakeLogs[dose.doseKey]?.taken) {
+          triggerAlarm(dose);
+        }
+      });
+    }
+
+    function triggerAlarm(dose) {
+      activeAlarmDose = dose;
+      document.getElementById('alarmMedName').innerText = dose.name;
+      document.getElementById('alarmMedDose').innerText = `${dose.dose} (${formatTime12hFromDate(dose.doseDate)})`;
+      const notesBox = document.getElementById('alarmMedNotesContainer');
+      if (dose.notes && dose.notes.trim()) {
+        document.getElementById('alarmMedNotes').innerText = dose.notes;
+        notesBox.classList.remove('hidden');
+      } else {
+        notesBox.classList.add('hidden');
+      }
+      openModal('alarmModal');
+      startAlarmLoop();
+    }
+
+    function handleAlarmAction(action) {
+      stopAlarmLoop();
+      closeModal('alarmModal');
+      if (!activeAlarmDose) return;
+      if (action === 'take') {
+        markDoseTaken(activeAlarmDose.doseKey, true);
+      } else if (action === 'snooze') {
+        const sDose = activeAlarmDose;
+        setTimeout(() => triggerAlarm(sDose), 5 * 60 * 1000);
+      }
+      activeAlarmDose = null;
+    }
+
+    /* Render Schedule */
+    function renderTodaySchedule() {
+      const doses = getAllTodayDoses();
+      const container = document.getElementById('dailyScheduleList');
+
+      const takenCount = doses.filter(d => d.status === 'taken').length;
+      const percent = doses.length > 0 ? Math.round((takenCount / doses.length) * 100) : 0;
+      document.getElementById('progressStatsText').innerText = `${takenCount} de ${doses.length} tomas`;
+      document.getElementById('progressPercentage').innerText = `${percent}%`;
+
+      if (medications.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 35px 15px; background: #fff; border-radius: 16px; border: 1px dashed var(--border);">
+            <div style="font-size: 32px; margin-bottom: 8px;">💊</div>
+            <strong style="display: block; font-size: 15px; color: var(--text-main); margin-bottom: 4px;">Sin medicamentos registrados</strong>
+            <p style="font-size: 13px; margin-bottom: 14px;">Toca el botón <b>+</b> abajo para agregar tu primer tratamiento.</p>
+            <button onclick="openNewMedModal()" style="background: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer;">
+              + Agregar Tratamiento
+            </button>
+          </div>
+        `;
+        renderNextDoseCard(null);
+        return;
+      }
+
+      if (doses.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px 10px;">No hay tomas programadas para hoy.</div>`;
+        renderNextDoseCard(null);
+        return;
+      }
+
+      const nextPending = doses.find(d => d.status === 'pending') || doses.find(d => d.status === 'overdue' && !intakeLogs[d.doseKey]?.taken);
+      renderNextDoseCard(nextPending || null);
+
+      container.innerHTML = doses.map(item => {
+        let actionBtn = '';
+        let badge = '';
+
+        if (item.status === 'taken') {
+          badge = '<span style="color: var(--primary); font-size: 11px; font-weight: bold;">✓ Tomada</span>';
+          actionBtn = `<button onclick="markDoseTaken('${item.doseKey}', false)" class="btn-taken">✓</button>`;
+        } else if (item.status === 'overdue') {
+          badge = '<span style="color: var(--rose); font-size: 11px; font-weight: bold;">⚠️ Atrasada</span>';
+          actionBtn = `<button onclick="markDoseTaken('${item.doseKey}', true)" class="btn-take" style="background:var(--rose);">Tomar</button>`;
+        } else {
+          badge = '<span style="color: var(--text-muted); font-size: 11px; font-weight: bold;">Pendiente</span>';
+          actionBtn = `<button onclick="markDoseTaken('${item.doseKey}', true)" class="btn-take">Tomar</button>`;
+        }
+
+        return `
+          <div class="dose-item ${item.status}">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:bold; background:#e2e8f0; padding:2px 6px; border-radius:6px;">
+                  ${formatTime12hFromDate(item.doseDate)}
+                </span>
+                ${badge}
+              </div>
+              <h4 style="font-size: 15px; font-weight: 800; margin-top: 4px;">${escapeHtml(item.name)}</h4>
+              <p style="font-size: 12px; color: var(--text-muted);">${escapeHtml(item.dose)} • Toma ${item.doseNumber}/${item.totalDoses}</p>
+            </div>
+            <div>${actionBtn}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderNextDoseCard(nextDose) {
+      const container = document.getElementById('nextDoseContent');
+      if (medications.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 6px 0; font-size: 13px;">
+            Aún no has agregado ningún tratamiento.
+          </div>
+        `;
+        document.getElementById('nextDoseCountdown').innerText = "--:--";
+        return;
+      }
+
+      if (!nextDose) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--primary-dark); padding: 8px 0; font-weight: 700;">
+            ✓ ¡Todas las tomas de hoy están completadas!
+          </div>
+        `;
+        document.getElementById('nextDoseCountdown').innerText = "Al día";
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--primary); margin-bottom: 2px;">
+              ${formatTime12hFromDate(nextDose.doseDate)}
+            </div>
+            <h3 style="font-size: 17px; font-weight: 800;">${escapeHtml(nextDose.name)}</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">${escapeHtml(nextDose.dose)} (cada ${nextDose.intervalHours}h)</p>
+          </div>
+          <button onclick="markDoseTaken('${nextDose.doseKey}', true)" class="btn-take">
+            Tomar
+          </button>
+        </div>
+      `;
+    }
+
+    function updateNextDoseCountdown() {
+      const doses = getAllTodayDoses();
+      const nextPending = doses.find(d => d.status === 'pending');
+      const countdownEl = document.getElementById('nextDoseCountdown');
+
+      if (!nextPending) {
+        countdownEl.innerText = "Al día";
+        return;
+      }
+
+      const diffMs = nextPending.doseDate - new Date();
+      if (diffMs <= 0) {
+        countdownEl.innerText = "¡Es la hora!";
+        return;
+      }
+
+      const totalSec = Math.floor(diffMs / 1000);
+      const hrs = Math.floor(totalSec / 3600);
+      const mins = Math.floor((totalSec % 3600) / 60);
+      const secs = totalSec % 60;
+      countdownEl.innerText = `En ${hrs > 0 ? hrs + 'h ' : ''}${mins}m ${secs}s`;
+    }
+
+    function markDoseTaken(doseKey, status) {
+      if (status) {
+        intakeLogs[doseKey] = { taken: true, timestamp: new Date().toLocaleTimeString() };
+        playTone(650, 0.15);
+      } else {
+        delete intakeLogs[doseKey];
+      }
+      saveData();
+      renderTodaySchedule();
+    }
+
+    /* Formulario */
+    function openNewMedModal() {
+      closeModal('medicinesModal');
+      document.getElementById('medId').value = '';
+      document.getElementById('formModalTitle').innerText = 'Nuevo Tratamiento';
+      document.getElementById('medName').value = '';
+      document.getElementById('medDose').value = '1 pastilla';
+      document.getElementById('medInterval').value = '6';
+      document.getElementById('medDurationDays').value = '5';
+      document.getElementById('medNotes').value = '';
+
+      const now = new Date();
+      document.getElementById('medStartDate').value = formatDateYYYYMMDD(now);
+      const h12 = now.getHours() % 12 || 12;
+      document.getElementById('startHour').value = String(h12).padStart(2, '0');
+      document.getElementById('startMinute').value = '00';
+      setStartAmPm(now.getHours() >= 12 ? 'PM' : 'AM');
+
+      previewSchedulePlan();
+      openModal('medFormModal');
+    }
+
+    function saveMedication(event) {
+      event.preventDefault();
+      const id = document.getElementById('medId').value;
+      const name = document.getElementById('medName').value.trim();
+      const dose = document.getElementById('medDose').value.trim();
+      const intervalHours = parseInt(document.getElementById('medInterval').value, 10);
+      const durationDays = parseInt(document.getElementById('medDurationDays').value, 10);
+      const startDate = document.getElementById('medStartDate').value;
+      const notes = document.getElementById('medNotes').value.trim();
+
+      let h = parseInt(document.getElementById('startHour').value, 10);
+      const m = document.getElementById('startMinute').value;
+      if (startAmPmValue === 'PM' && h < 12) h += 12;
+      if (startAmPmValue === 'AM' && h === 12) h = 0;
+      const startTime = `${String(h).padStart(2, '0')}:${m}`;
+
+      const newMed = {
+        id: id || ('med_' + Date.now()),
+        name,
+        dose,
+        intervalHours,
+        durationDays,
+        startDate,
+        startTime,
+        notes
+      };
+
+      if (id) {
+        const idx = medications.findIndex(m => m.id === id);
+        if (idx !== -1) medications[idx] = newMed;
+      } else {
+        medications.push(newMed);
+      }
+
+      saveData();
+      closeModal('medFormModal');
+      renderTodaySchedule();
+      renderMedsCatalog();
+    }
+
+    function deleteMedication(id) {
+      medications = medications.filter(m => m.id !== id);
+      saveData();
+      renderTodaySchedule();
+      renderMedsCatalog();
+    }
+
+    function renderMedsCatalog() {
+      const list = document.getElementById('medsCatalogList');
+      if (medications.length === 0) {
+        list.innerHTML = `<p style="text-align: center; color: var(--text-muted); font-size: 13px;">No hay tratamientos activos.</p>`;
+        return;
+      }
+      list.innerHTML = medications.map(m => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <strong style="font-size: 15px;">${escapeHtml(m.name)}</strong>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top:2px;">
+              Cada ${m.intervalHours}h por ${m.durationDays} días (${m.dose})
+            </p>
+          </div>
+          <button onclick="deleteMedication('${m.id}')" style="background:none; border:none; color:var(--rose); font-size:13px; font-weight:bold; cursor:pointer;">
+            Eliminar
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function updateDateHeaders() {
+      const now = new Date();
+      document.getElementById('currentDateHeader').innerText = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
